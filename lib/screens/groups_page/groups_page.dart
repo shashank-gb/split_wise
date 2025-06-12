@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:split_wise/firebase/group_service.dart';
 import 'package:split_wise/models/group.dart';
-import 'package:split_wise/screens/add_expense_screen.dart';
 import 'package:split_wise/screens/groups_page/create_group_screen.dart';
 import 'package:split_wise/screens/groups_page/group_details_screen.dart';
 
@@ -24,13 +23,13 @@ class _GroupsPageState extends State<GroupsPage> {
       appBar: AppBar(
         title: const Text('My Groups'),
         actions: [
-          IconButton(
+          /*IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const CreateGroupScreen()),
             ),
-          ),
+          ),*/
         ],
       ),
       body: StreamBuilder<List<Group>>(
@@ -63,11 +62,7 @@ class _GroupsPageState extends State<GroupsPage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => AddExpenseScreen(
-                isFromGroup: false,
-              ),
-            ),
+            MaterialPageRoute(builder: (context) => const CreateGroupScreen()),
           );
         },
         tooltip: 'Add expense',
@@ -77,17 +72,60 @@ class _GroupsPageState extends State<GroupsPage> {
   }
 
   Widget _buildGroupTile(Group group) {
-    return ListTile(
-      leading: _getGroupIcon(group.type),
-      title: Text(group.name),
-      subtitle: Text(
-        '${group.members.length} members • ${_formatDate(group.createdAt)}',
+    return Dismissible(
+      key: Key(group.id),
+      direction: DismissDirection.endToStart, // Only allow swipe from right to left
+      background: Container(
+        color: Colors.red,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: const Icon(Icons.delete, color: Colors.white),
       ),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => GroupDetailsScreen(
-            group: group,
+      confirmDismiss: (direction) async {
+        // Show confirmation dialog
+        return await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text("Confirm"),
+              content: const Text("Are you sure you want to delete this group?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text("CANCEL"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text("DELETE", style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      onDismissed: (direction) async {
+        try {
+          final groupService = Provider.of<GroupService>(context, listen: false);
+          await groupService.deleteGroup(group.id); // Call your delete function
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${group.name} deleted')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete: ${e.toString()}')),
+          );
+        }
+      },
+      child: ListTile(
+        leading: _getGroupIcon(group.type),
+        title: Text(group.name),
+        subtitle: Text(
+          '${group.members.length + 1} members • ${_formatDate(group.createdAt)}',
+        ),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GroupDetailsScreen(group: group),
           ),
         ),
       ),

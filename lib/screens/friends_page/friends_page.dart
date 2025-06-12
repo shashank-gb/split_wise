@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:split_wise/models/friend.dart';
-import 'package:split_wise/screens/add_expense_screen.dart';
+import 'package:split_wise/screens/groups_page/add_expense_screen.dart';
 import 'package:split_wise/screens/friends_page/contacts_screen.dart';
 import 'package:split_wise/screens/friends_page/friends_expenses_screen.dart';
 import 'package:split_wise/screens/friends_page/friends_list_item.dart';
@@ -22,13 +22,6 @@ class _FriendsPageState extends State<FriendsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Friends'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_add_alt_1),
-            onPressed: _addFriendFromContacts,
-            tooltip: 'Add friend from contacts',
-          ),
-        ],
       ),
       body: ListView.builder(
         itemCount: friends.length,
@@ -41,16 +34,7 @@ class _FriendsPageState extends State<FriendsPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddExpenseScreen(
-                isFromGroup: false,
-              ),
-            ),
-          );
-        },
+        onPressed: _addFriendFromContacts,
         tooltip: 'Add expense',
         child: const Icon(Icons.add),
       ),

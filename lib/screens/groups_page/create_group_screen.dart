@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:split_wise/firebase/group_service.dart';
 import 'package:split_wise/models/group.dart';
-import 'package:split_wise/screens/groups_page/group_type_button.dart';
 
 class CreateGroupScreen extends StatefulWidget {
   const CreateGroupScreen({super.key});

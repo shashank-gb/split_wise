@@ -7,7 +7,7 @@ class Group {
   final String name;
   final GroupType type;
   final String createdBy;
-  final List<String> members;
+  final Set<String> members;
   final DateTime createdAt;
 
   Group({
@@ -25,7 +25,7 @@ class Group {
       name: data['name'] ?? '',
       type: _stringToGroupType(data['type'] ?? 'other'),
       createdBy: data['createdBy'] ?? '',
-      members: List<String>.from(data['members'] ?? []),
+      members: Set<String>.from(data['members'] ?? []),
       createdAt: (data['createdAt'] as Timestamp).toDate(),
     );
   }

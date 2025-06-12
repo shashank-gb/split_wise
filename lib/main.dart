@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:split_wise/auth_services.dart';
-import 'package:split_wise/firebase/firebase_service.dart';
 import 'package:split_wise/firebase/expense_service.dart';
 import 'package:split_wise/firebase/group_service.dart';
 import 'package:split_wise/screens/google_sign_in_screen.dart';
@@ -18,9 +17,6 @@ void main() async {
       providers: [
         ChangeNotifierProvider(
             create: (_) => AuthService()
-        ),
-        Provider<FirebaseService>(
-          create: (_) => FirebaseService(),
         ),
         Provider<ExpenseService>(
           create: (_) => ExpenseService(),

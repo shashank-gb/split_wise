@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:split_wise/firebase/expense_service.dart';
+import 'package:split_wise/firebase/group_service.dart';
 import 'package:split_wise/models/expense.dart';
 import 'package:split_wise/models/group.dart';
-import 'package:split_wise/screens/add_expense_screen.dart';
+import 'package:split_wise/screens/groups_page/add_expense_screen.dart';
+import 'package:split_wise/screens/groups_page/add_friends_to_group.dart';
+import 'package:split_wise/screens/groups_page/group_settings_page.dart';
 import 'package:split_wise/screens/home_screen.dart';
 
 class GroupDetailsScreen extends StatefulWidget {
@@ -20,6 +23,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final expenseService = Provider.of<ExpenseService>(context, listen: false);
+    final groupService = Provider.of<GroupService>(context, listen: false);
 
     return PopScope(
       canPop: false,
@@ -43,7 +47,12 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
             IconButton(
               icon: const Icon(Icons.settings),
               onPressed: () {
-                // Navigate to settings page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GroupSettingsPage(group: widget.group),
+                  ),
+                );
               },
             ),
           ],
@@ -52,8 +61,25 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
           children: [
             // Horizontal scrollable buttons
             _buildActionButtons(),
-            // Expenses list
-            Expanded(child: _buildExpensesList(expenseService)),
+            StreamBuilder<List<String>>(
+                stream: groupService.getGroupMembersByGroupName(widget.group.name),
+                builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                }
+                if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                }
+
+                final members = snapshot.data ?? [];
+
+                if (members.isEmpty) {
+                  return _buildAddMembersCard(context, groupService);
+                } else {
+                  return Expanded(child: _buildExpensesList(expenseService));
+                }
+              },
+            )
           ],
         ),
         floatingActionButton: FloatingActionButton(
@@ -62,7 +88,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => AddExpenseScreen(
-                  isFromGroup: true,
+                  groupId: widget.group.id,
                   groupName: widget.group.name,
                 ),
               ),
@@ -79,6 +105,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
       height: 60,
       child: ListView(
         scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 16.0),
         children: [
           _buildActionButton("Settle Up", 0, Color(0xFF2196F3)),
           _buildActionButton("Balances", 1, Color(0xFF424242)),
@@ -110,6 +137,84 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAddMembersCard(BuildContext context, GroupService groupService) {
+    return Card(
+      margin: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "You're the only one here",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "Invite friends to start sharing expenses",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => _shareGroupLink(groupService),
+                  icon: const Icon(Icons.share),
+                  label: const Text("Share Link"),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => _navigateToAddMembers(),
+                  icon: const Icon(Icons.person_add),
+                  label: const Text("Add Members"),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _shareGroupLink(GroupService groupService) async {
+    try {
+      final shareCode = await groupService.getGroupShareCode(widget.group.id);
+      final shareLink = 'https://yourapp.com/join?group=$shareCode';
+
+      // todo:
+      /*await Share.share(
+        'Join my expense group on SplitWise: $shareLink',
+        subject: 'Join my expense group',
+      );*/
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to share: $e')),
+      );
+    }
+  }
+
+  void _navigateToAddMembers() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddFriendsToGroupScreen(groupId: widget.group.id),
       ),
     );
   }
